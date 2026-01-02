@@ -12,57 +12,52 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// 👤 PLAYER ID
-let nome = localStorage.getItem("nome");
-
-if (!nome) {
-  nome = prompt("Inserisci il tuo nome:");
-  localStorage.setItem("nome", nome);
+// 🏠 STANZA
+let stanza = localStorage.getItem("stanza");
+if (!stanza) {
+    stanza = prompt("Inserisci codice stanza:");
+    localStorage.setItem("stanza", stanza.toUpperCase());
 }
+document.getElementById("codiceStanza").textContent = stanza;
 
+const baseRef = database.ref("stanze/" + stanza);
 
+// 👤 GIOCATORE
 let playerId = localStorage.getItem("playerId");
 if (!playerId) {
     playerId = Math.random().toString(36).substring(2);
     localStorage.setItem("playerId", playerId);
 }
 
-database.ref("giocatori/" + playerId).set({
-  nome: nome
-});
+let nome = localStorage.getItem("nome");
+if (!nome) {
+    nome = prompt("Inserisci il tuo nome:");
+    localStorage.setItem("nome", nome);
+}
 
+baseRef.child("giocatori/" + playerId).set({ nome });
 
+// 👑 HOST
 let isHost = false;
+const hostRef = baseRef.child("host");
 
-// 👑 HOST (UNICO, STABILE)
-const hostRef = database.ref("host");
-
-// assegna host se non esiste
-hostRef.once("value").then(snapshot => {
-    if (!snapshot.exists()) {
-        hostRef.set(playerId);
-    }
+hostRef.once("value").then(snap => {
+    if (!snap.exists()) hostRef.set(playerId);
 });
 
-// ascolta SEMPRE l'host
-hostRef.on("value", snapshot => {
-    const hostId = snapshot.val();
-    isHost = hostId === playerId;
-
-    const btn = document.getElementById("estraiBtn");
-    if (btn) btn.disabled = !isHost;
-
-    console.log("HOST:", hostId, "IO:", playerId, "isHost:", isHost);
+hostRef.on("value", snap => {
+    isHost = snap.val() === playerId;
+    document.getElementById("estraiBtn").disabled = !isHost;
+    document.getElementById("ruolo").textContent = isHost ? "👑 Sei l'host" : "👤 Sei un giocatore";
 });
 
-// 🎯 STATO LOCALE
+// 🎯 SCHEDINA
 let numeriSegnati = [];
-let vittorie = { ambo: false, terno: false, tombola: false };
+let vittorie = { ambo:false, terno:false, tombola:false };
 
-// 🎟 CREA SCHEDINA
 function creaSchedina() {
     numeriSegnati = [];
-    vittorie = { ambo: false, terno: false, tombola: false };
+    vittorie = { ambo:false, terno:false, tombola:false };
     document.getElementById("schedina").innerHTML = "";
 
     let numeri = [];
@@ -71,22 +66,20 @@ function creaSchedina() {
         if (!numeri.includes(n)) numeri.push(n);
     }
 
-    numeri.forEach(num => {
-        const div = document.createElement("div");
-        div.className = "casella";
-        div.textContent = num;
-        div.dataset.numero = num;
-        document.getElementById("schedina").appendChild(div);
+    numeri.forEach(n => {
+        const d = document.createElement("div");
+        d.className = "casella";
+        d.textContent = n;
+        d.dataset.numero = n;
+        document.getElementById("schedina").appendChild(d);
     });
 }
 
-// 🎲 ESTRAI NUMERO (SOLO HOST)
+// 🎲 ESTRAZIONE (ANTI-DOPPIO)
 function estraiNumero() {
     if (!isHost) return;
 
-    const ref = database.ref("numeriUsciti");
-
-    ref.transaction(numeri => {
+    baseRef.child("numeriUsciti").transaction(numeri => {
         if (numeri === null) numeri = [];
 
         if (numeri.length >= 90) return numeri;
@@ -99,78 +92,72 @@ function estraiNumero() {
         const estratto = disponibili[Math.floor(Math.random() * disponibili.length)];
         numeri.push(estratto);
 
-        database.ref("numeroCorrente").set(estratto);
+        baseRef.child("numeroCorrente").set(estratto);
         return numeri;
     });
 }
 
-// 👀 ASCOLTA NUMERO CORRENTE
-database.ref("numeroCorrente").on("value", snap => {
-    const numero = snap.val();
-    if (!numero) return;
+// 👀 ASCOLTA NUMERI (SINGOLA FONTE)
+baseRef.child("numeriUsciti").on("value", snap => {
+    const numeri = snap.val() || [];
 
-    document.getElementById("numero").textContent = numero;
-
-    const span = document.createElement("span");
-    span.textContent = numero;
-    document.getElementById("listaNumeri").appendChild(span);
-
-    document.querySelectorAll(".casella").forEach(c => {
-        if (parseInt(c.dataset.numero) === numero && !c.classList.contains("segnato")) {
-            c.classList.add("segnato");
-            numeriSegnati.push(numero);
-            controllaVittoria();
-        }
+    document.getElementById("listaNumeri").innerHTML = "";
+    numeri.forEach(n => {
+        const s = document.createElement("span");
+        s.textContent = n;
+        document.getElementById("listaNumeri").appendChild(s);
     });
+
+    const ultimo = numeri[numeri.length - 1];
+    if (ultimo) {
+        document.getElementById("numero").textContent = ultimo;
+
+        document.querySelectorAll(".casella").forEach(c => {
+            if (parseInt(c.dataset.numero) === ultimo && !c.classList.contains("segnato")) {
+                c.classList.add("segnato");
+                numeriSegnati.push(ultimo);
+                controllaVittoria();
+            }
+        });
+    }
 });
 
-function dichiaraVittoria(tipo) {
-  database.ref("vittoria").set({
-    tipo: tipo,
-    giocatore: nome
-  });
-}
-
-database.ref("vittoria").on("value", snap => {
-  const v = snap.val();
-  if (!v) return;
-
-  alert(`🏆 ${v.tipo}! 🎉\nVince: ${v.giocatore}`);
-});
-
-
-// 🏆 CONTROLLO VITTORIE
+// 🏆 VITTORIE GLOBALI
 function controllaVittoria() {
     const c = numeriSegnati.length;
 
     if (c >= 2 && !vittorie.ambo) {
         vittorie.ambo = true;
-       dichiaraVittoria("AMBO")
+        baseRef.child("vittoria").set({ tipo:"AMBO", nome });
     }
     if (c >= 3 && !vittorie.terno) {
-       vittorie.terno = true;
-       dichiaraVittoria("TERNO")
+        vittorie.terno = true;
+        baseRef.child("vittoria").set({ tipo:"TERNO", nome });
     }
     if (c >= 15 && !vittorie.tombola) {
         vittorie.tombola = true;
-       dichiaraVittoria("TOMBOLA")
+        baseRef.child("vittoria").set({ tipo:"TOMBOLA", nome });
     }
 }
 
-// 🔄 RESET PARTITA (SOLO HOST)
-function resetPartita() {
-    if (!isHost) return alert("Solo l'host può resettare!");
+baseRef.child("vittoria").on("value", snap => {
+    const v = snap.val();
+    if (v) alert(`🏆 ${v.tipo}! Vince ${v.nome}`);
+});
 
-    database.ref().set({
+// 🔄 RESET STANZA
+function resetPartita() {
+    if (!isHost) return alert("Solo l'host!");
+
+    baseRef.set({
         host: playerId,
         numeriUsciti: [],
         numeroCorrente: null
     });
 
-    document.getElementById("numero").textContent = "-";
-    document.getElementById("listaNumeri").innerHTML = "";
     document.getElementById("schedina").innerHTML = "";
 }
+
 
 
 
