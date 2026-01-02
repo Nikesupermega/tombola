@@ -16,8 +16,9 @@ h1 {
 }
 
 button {
-    font-size: 20px;
-    padding: 15px 30px;
+    font-size: 18px;
+    padding: 12px 20px;
+    margin: 5px;
     background: #27ae60;
     color: white;
     border: none;
@@ -25,13 +26,17 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+button:disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
     background: #219150;
 }
 
 #storico {
     margin-top: 30px;
-    font-size: 18px;
 }
 
 .numeri {
