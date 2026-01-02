@@ -13,6 +13,14 @@ firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // 👤 PLAYER ID
+let nome = localStorage.getItem("nome");
+
+if (!nome) {
+  nome = prompt("Inserisci il tuo nome:");
+  localStorage.setItem("nome", nome);
+}
+
+
 let playerId = localStorage.getItem("playerId");
 if (!playerId) {
     playerId = Math.random().toString(36).substring(2);
@@ -143,3 +151,4 @@ function resetPartita() {
     document.getElementById("listaNumeri").innerHTML = "";
     document.getElementById("schedina").innerHTML = "";
 }
+
