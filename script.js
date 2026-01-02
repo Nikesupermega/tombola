@@ -12,6 +12,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+// 👤 PLAYER ID
+let playerId = localStorage.getItem("playerId");
+if (!playerId) {
+    playerId = Math.random().toString(36).substring(2);
+    localStorage.setItem("playerId", playerId);
+}
+
+let isHost = false;
+
+// 👑 HOST (UNICO, STABILE)
 const hostRef = database.ref("host");
 
 // assegna host se non esiste
@@ -21,31 +31,16 @@ hostRef.once("value").then(snapshot => {
     }
 });
 
-// ascolta SEMPRE chi è l'host
+// ascolta SEMPRE l'host
 hostRef.on("value", snapshot => {
     const hostId = snapshot.val();
     isHost = hostId === playerId;
 
     const btn = document.getElementById("estraiBtn");
-    if (btn) {
-        btn.disabled = !isHost;
-    }
+    if (btn) btn.disabled = !isHost;
 
     console.log("HOST:", hostId, "IO:", playerId, "isHost:", isHost);
 });
-
-
-// 👤 PLAYER ID (persistente)
-let playerId = localStorage.getItem("playerId");
-if (!playerId) {
-    playerId = Math.random().toString(36).substring(2);
-    localStorage.setItem("playerId", playerId);
-}
-
-let isHost = false;
-
-// 👑 HOST SICURO (transaction)
-const hostRef = database.ref("host");
 
 // 🎯 STATO LOCALE
 let numeriSegnati = [];
@@ -72,7 +67,7 @@ function creaSchedina() {
     });
 }
 
-// 🎲 ESTRAZIONE CORRETTA (solo host)
+// 🎲 ESTRAI NUMERO (SOLO HOST)
 function estraiNumero() {
     if (!isHost) return;
 
@@ -81,7 +76,7 @@ function estraiNumero() {
     ref.transaction(numeri => {
         if (numeri === null) numeri = [];
 
-        if (numeri.length >= 90) return; // finiti
+        if (numeri.length >= 90) return numeri;
 
         let disponibili = [];
         for (let i = 1; i <= 90; i++) {
@@ -96,7 +91,7 @@ function estraiNumero() {
     });
 }
 
-// 👀 LISTENER NUMERO CORRENTE
+// 👀 ASCOLTA NUMERO CORRENTE
 database.ref("numeroCorrente").on("value", snap => {
     const numero = snap.val();
     if (!numero) return;
@@ -134,7 +129,7 @@ function controllaVittoria() {
     }
 }
 
-// 🔄 RESET SICURO (solo host)
+// 🔄 RESET PARTITA (SOLO HOST)
 function resetPartita() {
     if (!isHost) return alert("Solo l'host può resettare!");
 
@@ -148,5 +143,3 @@ function resetPartita() {
     document.getElementById("listaNumeri").innerHTML = "";
     document.getElementById("schedina").innerHTML = "";
 }
-
-
