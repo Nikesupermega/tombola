@@ -7,29 +7,29 @@
 </head>
 <body>
 
-    <h1>🎄 Tombola di Famiglia 🎄</h1>
+<h1>🎄 Tombola di Famiglia 🎄</h1>
 
-    <div id="numero">-</div>
+<div id="numero">-</div>
 
-    <button onclick="estraiNumero()">Estrai Numero</button>
+<button id="estraiBtn" onclick="estraiNumero()">Estrai Numero</button>
+<button onclick="resetPartita()">Reset Partita</button>
 
-    <hr>
+<hr>
 
-    <h2>🎟 La tua schedina</h2>
-    <button onclick="creaSchedina()">Crea schedina</button>
+<h2>🎟 La tua schedina</h2>
+<button onclick="creaSchedina()">Crea schedina</button>
 
-    <div id="schedina" class="schedina"></div>
+<div id="schedina" class="schedina"></div>
 
-    <div id="storico">
-        <strong>Numeri usciti:</strong>
-        <div class="numeri" id="listaNumeri"></div>
-    </div>
+<div id="storico">
+    <strong>Numeri usciti:</strong>
+    <div class="numeri" id="listaNumeri"></div>
+</div>
 
-    <!-- FIREBASE COMPAT (UNA SOLA VERSIONE) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-    <script src="script.js"></script>
-
+<script src="script.js"></script>
 </body>
 </html>
