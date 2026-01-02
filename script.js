@@ -11,6 +11,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+let isHost = false;
+let playerId = localStorage.getItem("playerId");
+
+if (!playerId) {
+    playerId = Math.random().toString(36).substring(2);
+    localStorage.setItem("playerId", playerId);
+}
+
 
 let numeriDisponibili = [];
 let numeriUsciti = [];
@@ -66,3 +74,4 @@ function creaSchedina() {
         document.getElementById("schedina").appendChild(div);
     });
 }
+
