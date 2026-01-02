@@ -1,3 +1,4 @@
+// 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyD7uCXlJjnLV0RrbM3Ai9SOrIVIdrvUt4w",
   authDomain: "tombola-online-6f922.firebaseapp.com",
@@ -11,59 +12,42 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-let isHost = false;
+// 👤 PLAYER ID
 let playerId = localStorage.getItem("playerId");
-
 if (!playerId) {
     playerId = Math.random().toString(36).substring(2);
     localStorage.setItem("playerId", playerId);
 }
 
+let isHost = false;
 
-let numeriDisponibili = [];
-let numeriUsciti = [];
-
-// inizializza numeri da 1 a 90
-for (let i = 1; i <= 90; i++) {
-    numeriDisponibili.push(i);
-}
-
-function estraiNumero() {
-    if (numeriDisponibili.length === 0) {
-        alert("Tutti i numeri sono stati estratti!");
-        return;
+// 👑 HOST LOGIC
+const hostRef = database.ref("host");
+hostRef.once("value", snap => {
+    if (!snap.exists()) {
+        hostRef.set(playerId);
+        isHost = true;
+    } else {
+        isHost = snap.val() === playerId;
     }
-
-    const index = Math.floor(Math.random() * numeriDisponibili.length);
-    const numero = numeriDisponibili.splice(index, 1)[0];
-
-    numeriUsciti.push(numero);
-
-    document.getElementById("numero").textContent = numero;
-
-    const span = document.createElement("span");
-    span.textContent = numero;
-    document.getElementById("listaNumeri").appendChild(span);
-    // segna il numero sulla schedina
-document.querySelectorAll(".casella").forEach(casella => {
-    if (parseInt(casella.dataset.numero) === numero) {
-        casella.classList.add("segnato");
-    }
+    document.getElementById("estraiBtn").disabled = !isHost;
 });
 
-}
-
+// 🎯 GAME STATE
 let schedinaNumeri = [];
+let numeriSegnati = [];
+let vittorie = { ambo: false, terno: false, tombola: false };
 
+// 🎟 CREA SCHEDINA
 function creaSchedina() {
     schedinaNumeri = [];
+    numeriSegnati = [];
+    vittorie = { ambo: false, terno: false, tombola: false };
     document.getElementById("schedina").innerHTML = "";
 
     while (schedinaNumeri.length < 15) {
         let n = Math.floor(Math.random() * 90) + 1;
-        if (!schedinaNumeri.includes(n)) {
-            schedinaNumeri.push(n);
-        }
+        if (!schedinaNumeri.includes(n)) schedinaNumeri.push(n);
     }
 
     schedinaNumeri.forEach(num => {
@@ -75,3 +59,64 @@ function creaSchedina() {
     });
 }
 
+// 🎲 ESTRAI NUMERO (HOST)
+function estraiNumero() {
+    if (!isHost) return;
+
+    const numero = Math.floor(Math.random() * 90) + 1;
+    database.ref("numeroCorrente").set(numero);
+    database.ref("numeriUsciti").push(numero);
+}
+
+// 👀 LISTENER REALTIME
+database.ref("numeroCorrente").on("value", snap => {
+    const numero = snap.val();
+    if (!numero) return;
+
+    document.getElementById("numero").textContent = numero;
+
+    const span = document.createElement("span");
+    span.textContent = numero;
+    document.getElementById("listaNumeri").appendChild(span);
+
+    document.querySelectorAll(".casella").forEach(c => {
+        if (parseInt(c.dataset.numero) === numero && !c.classList.contains("segnato")) {
+            c.classList.add("segnato");
+            numeriSegnati.push(numero);
+            controllaVittoria();
+        }
+    });
+});
+
+// 🏆 CONTROLLO VITTORIA
+function controllaVittoria() {
+    const count = numeriSegnati.length;
+
+    if (count >= 2 && !vittorie.ambo) {
+        alert("🎉 AMBO!");
+        vittorie.ambo = true;
+    }
+    if (count >= 3 && !vittorie.terno) {
+        alert("🎉 TERNO!");
+        vittorie.terno = true;
+    }
+    if (count >= 15 && !vittorie.tombola) {
+        alert("🏆 TOMBOLA!!!");
+        vittorie.tombola = true;
+    }
+}
+
+// 🔄 RESET PARTITA (HOST)
+function resetPartita() {
+    if (!isHost) return alert("Solo l'host può resettare!");
+
+    database.ref().set({
+        host: playerId,
+        numeroCorrente: null,
+        numeriUsciti: []
+    });
+
+    document.getElementById("numero").textContent = "-";
+    document.getElementById("listaNumeri").innerHTML = "";
+    document.getElementById("schedina").innerHTML = "";
+}
