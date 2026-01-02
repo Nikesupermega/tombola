@@ -1,76 +1,33 @@
 body {
     font-family: Arial, sans-serif;
     text-align: center;
-    background: #f2f2f2;
-    padding: 20px;
-}
-
-h1 {
-    color: #c0392b;
 }
 
 #numero {
-    font-size: 80px;
-    margin: 20px 0;
-    color: #2c3e50;
-}
-
-button {
-    font-size: 18px;
-    padding: 12px 20px;
-    margin: 5px;
-    background: #27ae60;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-}
-
-button:disabled {
-    background: gray;
-    cursor: not-allowed;
-}
-
-button:hover:not(:disabled) {
-    background: #219150;
-}
-
-#storico {
-    margin-top: 30px;
-}
-
-.numeri {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.numeri span {
-    background: white;
-    padding: 8px 12px;
-    border-radius: 5px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    font-size: 60px;
+    margin: 20px;
 }
 
 .schedina {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    max-width: 300px;
-    margin: 20px auto;
+    grid-template-columns: repeat(5, 60px);
+    gap: 5px;
+    justify-content: center;
 }
 
 .casella {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 18px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    border: 1px solid #333;
+    padding: 10px;
+    font-weight: bold;
 }
 
-.segnato {
-    background: #27ae60;
-    color: white;
+.casella.segnato {
+    background: gold;
 }
+
+.numeri span {
+    margin: 4px;
+    display: inline-block;
+    font-weight: bold;
+}
+
