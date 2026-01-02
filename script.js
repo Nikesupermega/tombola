@@ -12,6 +12,29 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+const hostRef = database.ref("host");
+
+// assegna host se non esiste
+hostRef.once("value").then(snapshot => {
+    if (!snapshot.exists()) {
+        hostRef.set(playerId);
+    }
+});
+
+// ascolta SEMPRE chi è l'host
+hostRef.on("value", snapshot => {
+    const hostId = snapshot.val();
+    isHost = hostId === playerId;
+
+    const btn = document.getElementById("estraiBtn");
+    if (btn) {
+        btn.disabled = !isHost;
+    }
+
+    console.log("HOST:", hostId, "IO:", playerId, "isHost:", isHost);
+});
+
+
 // 👤 PLAYER ID (persistente)
 let playerId = localStorage.getItem("playerId");
 if (!playerId) {
@@ -23,17 +46,6 @@ let isHost = false;
 
 // 👑 HOST SICURO (transaction)
 const hostRef = database.ref("host");
-hostRef.transaction(currentHost => {
-    if (currentHost === null) {
-        return playerId; // divento host
-    }
-    return currentHost; // host già esiste
-}, (error, committed, snapshot) => {
-    if (snapshot && snapshot.val() === playerId) {
-        isHost = true;
-    }
-    document.getElementById("estraiBtn").disabled = !isHost;
-});
 
 // 🎯 STATO LOCALE
 let numeriSegnati = [];
@@ -136,4 +148,5 @@ function resetPartita() {
     document.getElementById("listaNumeri").innerHTML = "";
     document.getElementById("schedina").innerHTML = "";
 }
+
 
