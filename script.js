@@ -131,6 +131,13 @@ function dichiaraVittoria(tipo) {
   });
 }
 
+database.ref("vittoria").on("value", snap => {
+  const v = snap.val();
+  if (!v) return;
+
+  alert(`🏆 ${v.tipo}! 🎉\nVince: ${v.giocatore}`);
+});
+
 
 // 🏆 CONTROLLO VITTORIE
 function controllaVittoria() {
@@ -164,5 +171,6 @@ function resetPartita() {
     document.getElementById("listaNumeri").innerHTML = "";
     document.getElementById("schedina").innerHTML = "";
 }
+
 
 
