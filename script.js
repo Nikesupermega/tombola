@@ -22,6 +22,12 @@ document.getElementById("codiceStanza").textContent = stanza;
 
 const baseRef = database.ref("stanze/" + stanza);
 
+let nome = localStorage.getItem("nome");
+if (!nome) {
+    nome = prompt("Inserisci il tuo nome:");
+    localStorage.setItem("nome", nome);
+}
+
 // 👤 GIOCATORE
 let playerId = localStorage.getItem("playerId");
 if (!playerId) {
@@ -157,6 +163,7 @@ function resetPartita() {
 
     document.getElementById("schedina").innerHTML = "";
 }
+
 
 
 
