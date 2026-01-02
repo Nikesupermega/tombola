@@ -27,6 +27,11 @@ if (!playerId) {
     localStorage.setItem("playerId", playerId);
 }
 
+database.ref("giocatori/" + playerId).set({
+  nome: nome
+});
+
+
 let isHost = false;
 
 // 👑 HOST (UNICO, STABILE)
@@ -119,21 +124,29 @@ database.ref("numeroCorrente").on("value", snap => {
     });
 });
 
+function dichiaraVittoria(tipo) {
+  database.ref("vittoria").set({
+    tipo: tipo,
+    giocatore: nome
+  });
+}
+
+
 // 🏆 CONTROLLO VITTORIE
 function controllaVittoria() {
     const c = numeriSegnati.length;
 
     if (c >= 2 && !vittorie.ambo) {
-        alert("🎉 AMBO!");
         vittorie.ambo = true;
+       dichiaraVittoria("AMBO")
     }
     if (c >= 3 && !vittorie.terno) {
-        alert("🎉 TERNO!");
-        vittorie.terno = true;
+       vittorie.terno = true;
+       dichiaraVittoria("TERNO")
     }
     if (c >= 15 && !vittorie.tombola) {
-        alert("🏆 TOMBOLA!!!");
         vittorie.tombola = true;
+       dichiaraVittoria("TOMBOLA")
     }
 }
 
@@ -151,4 +164,5 @@ function resetPartita() {
     document.getElementById("listaNumeri").innerHTML = "";
     document.getElementById("schedina").innerHTML = "";
 }
+
 
