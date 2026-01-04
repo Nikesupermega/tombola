@@ -88,7 +88,7 @@ function ascoltaNumeri() {
     const ultimo = numeri[numeri.length - 1];
     document.getElementById("numero").textContent = ultimo || "-";
 
-    // segna sulla schedina
+    // segna schedina
     if (!ultimo) return;
 
     document.querySelectorAll(".casella").forEach(c => {
@@ -101,6 +101,7 @@ function ascoltaNumeri() {
     });
   });
 }
+
 
 
 // SCHEDINA
@@ -153,5 +154,6 @@ function resetPartita() {
   baseRef.child("numeriUsciti").set([]);
   baseRef.child("vittoria").remove();
 }
+
 
 
