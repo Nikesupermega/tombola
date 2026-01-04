@@ -33,7 +33,7 @@ function entraStanza() {
 
   assegnaHost();
   ascoltaNumeri();
-  controllavittoria();
+  controllaVittoria();
 }
 
 // HOST AUTOMATICO
@@ -154,6 +154,7 @@ function resetPartita() {
   baseRef.child("numeriUsciti").set([]);
   baseRef.child("vittoria").remove();
 }
+
 
 
 
