@@ -72,6 +72,16 @@ function estraiNumero() {
 
 // ASCOLTO NUMERI
 function ascoltaNumeri() {
+  document.getElementById("numero").textContent = numeri.at(-1) || "-";
+  document.querySelectorAll(".casella").forEach(c => {
+  const n = parseInt(c.dataset.numero);
+  if (n === numeri.at(-1) && !c.classList.contains("segnato")) {
+    c.classList.add("segnato");
+    numeriSegnati.push(n);
+    controllaVittoria();
+  }
+});
+
   baseRef.child("numeriUsciti").on("value", snap => {
     const numeri = snap.val() || [];
     const lista = document.getElementById("listaNumeri");
@@ -82,23 +92,48 @@ function ascoltaNumeri() {
 }
 
 // SCHEDINA
+let numeriSchedina = [];
+let numeriSegnati = [];
+let vittorie = { ambo:false, terno:false, tombola:false };
+
 function creaSchedina() {
+  numeriSchedina = [];
+  numeriSegnati = [];
+  vittorie = { ambo:false, terno:false, tombola:false };
+
   const s = document.getElementById("schedina");
   s.innerHTML = "";
-  let nums = [];
-  while (nums.length < 15) {
-    let n = Math.floor(Math.random()*90)+1;
-    if (!nums.includes(n)) nums.push(n);
+
+  while (numeriSchedina.length < 15) {
+    let n = Math.floor(Math.random() * 90) + 1;
+    if (!numeriSchedina.includes(n)) numeriSchedina.push(n);
   }
-  nums.forEach(n => s.innerHTML += `<div class="casella">${n}</div>`);
+
+  numeriSchedina.forEach(n => {
+    const d = document.createElement("div");
+    d.className = "casella";
+    d.textContent = n;
+    d.dataset.numero = n;
+    s.appendChild(d);
+  });
 }
 
 // VITTORIA
-function ascoltaVittoria() {
-  baseRef.child("vittoria").on("value", s => {
-    if (s.val()) alert(`🏆 ${s.val().tipo} vince ${s.val().nome}`);
-  });
+function controllaVittoria() {
+  if (numeriSegnati.length >= 2 && !vittorie.ambo) {
+    vittorie.ambo = true;
+    baseRef.child("vittoria").set({ tipo:"AMBO", nome });
+  }
+  if (numeriSegnati.length >= 3 && !vittorie.terno) {
+    vittorie.terno = true;
+    baseRef.child("vittoria").set({ tipo:"TERNO", nome });
+  }
+  if (numeriSegnati.length >= 15 && !vittorie.tombola) {
+    vittorie.tombola = true;
+    baseRef.child("vittoria").set({ tipo:"TOMBOLA", nome });
+  }
 }
+
 
 // RESET
 function resetPartita() {
@@ -106,3 +141,4 @@ function resetPartita() {
   baseRef.child("numeriUsciti").set([]);
   baseRef.child("vittoria").remove();
 }
+
