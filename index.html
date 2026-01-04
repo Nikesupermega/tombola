@@ -1,41 +1,44 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Tombola Online</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Tombola Online</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>🎄 Tombola di Famiglia 🎄</h1>
-<p>🏠 Stanza: <strong id="codiceStanza"></strong></p>
-<p id="ruolo"></p>
+<div id="login">
+  <h2>🎄 Entra nella Tombola</h2>
+  <input id="inputStanza" placeholder="Codice stanza">
+  <button onclick="entraStanza()">Entra</button>
+</div>
 
-<div id="numero">-</div>
+<div id="gioco" style="display:none">
+  <h1>🎄 Tombola di Famiglia 🎄</h1>
+  <p>🏠 Stanza: <strong id="codiceStanza"></strong></p>
+  <p id="ruolo"></p>
 
-<button id="estraiBtn" onclick="estraiNumero()">Estrai Numero</button>
-<button onclick="resetPartita()">Reset Partita</button>
+  <div id="numero">-</div>
 
-<hr>
+  <button id="estraiBtn" onclick="estraiNumero()">Estrai Numero</button>
+  <button onclick="resetPartita()">Reset</button>
 
-<h2>🎟 La tua schedina</h2>
-<button onclick="creaSchedina()">Crea schedina</button>
+  <hr>
 
-<div id="schedina" class="schedina"></div>
+  <button onclick="creaSchedina()">Crea schedina</button>
+  <div id="schedina" class="schedina"></div>
 
-<div id="storico">
+  <div id="storico">
     <strong>Numeri usciti:</strong>
     <div class="numeri" id="listaNumeri"></div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="script.js"></script>
-
 </body>
 </html>
-
-
 
 
 
