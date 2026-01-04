@@ -1,165 +1,108 @@
-// 🔥 FIREBASE CONFIG
-const firebaseConfig = {
+// FIREBASE
+firebase.initializeApp({
   apiKey: "AIzaSyD7uCXlJjnLV0RrbM3Ai9SOrIVIdrvUt4w",
   authDomain: "tombola-online-6f922.firebaseapp.com",
   databaseURL: "https://tombola-online-6f922-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "tombola-online-6f922",
-  storageBucket: "tombola-online-6f922.firebasestorage.app",
-  messagingSenderId: "520956930846",
-  appId: "1:520956930846:web:ffe20c108ace202f05b70f"
-};
-
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
-
-// 🏠 STANZA
-let stanza = localStorage.getItem("stanza");
-if (!stanza) {
-    stanza = prompt("Inserisci codice stanza:");
-    localStorage.setItem("stanza", stanza.toUpperCase());
-}
-document.getElementById("codiceStanza").textContent = stanza;
-
-const baseRef = database.ref("stanze/" + stanza);
-
-// 👤 GIOCATORE
-let playerId = localStorage.getItem("playerId");
-if (!playerId) {
-    playerId = Math.random().toString(36).substring(2);
-    localStorage.setItem("playerId", playerId);
-}
-
-let nome = localStorage.getItem("nome");
-if (!nome) {
-    nome = prompt("Inserisci il tuo nome:");
-    localStorage.setItem("nome", nome);
-}
-
-baseRef.child("giocatori/" + playerId).set({ nome });
-
-// 👑 HOST
-let isHost = false;
-const hostRef = baseRef.child("host");
-
-hostRef.once("value").then(snap => {
-    if (!snap.exists()) hostRef.set(playerId);
+  projectId: "tombola-online-6f922"
 });
 
-hostRef.on("value", snap => {
+const db = firebase.database();
+
+let stanza, baseRef, playerId, nome, isHost = false;
+
+// LOGIN STANZA
+function entraStanza() {
+  stanza = document.getElementById("inputStanza").value.trim();
+  if (!stanza) return alert("Inserisci una stanza");
+
+  document.getElementById("login").style.display = "none";
+  document.getElementById("gioco").style.display = "block";
+  document.getElementById("codiceStanza").textContent = stanza;
+
+  baseRef = db.ref("stanze/" + stanza);
+
+  playerId = localStorage.getItem("playerId") || Math.random().toString(36).substr(2);
+  localStorage.setItem("playerId", playerId);
+
+  nome = localStorage.getItem("nome") || prompt("Il tuo nome?");
+  localStorage.setItem("nome", nome);
+
+  const giocatoreRef = baseRef.child("giocatori/" + playerId);
+  giocatoreRef.set({ nome });
+  giocatoreRef.onDisconnect().remove();
+
+  assegnaHost();
+  ascoltaNumeri();
+  ascoltaVittoria();
+}
+
+// HOST AUTOMATICO
+function assegnaHost() {
+  const hostRef = baseRef.child("host");
+
+  hostRef.once("value").then(snap => {
+    if (!snap.exists()) hostRef.set(playerId);
+  });
+
+  hostRef.on("value", snap => {
     isHost = snap.val() === playerId;
     document.getElementById("estraiBtn").disabled = !isHost;
-    document.getElementById("ruolo").textContent = isHost ? "👑 Sei l'host" : "👤 Sei un giocatore";
-});
+    document.getElementById("ruolo").textContent = isHost ? "👑 Sei l'host" : "👤 Giocatore";
+  });
 
-// 🎯 SCHEDINA
-let numeriSegnati = [];
-let vittorie = { ambo:false, terno:false, tombola:false };
-
-function creaSchedina() {
-    numeriSegnati = [];
-    vittorie = { ambo:false, terno:false, tombola:false };
-    document.getElementById("schedina").innerHTML = "";
-
-    let numeri = [];
-    while (numeri.length < 15) {
-        let n = Math.floor(Math.random() * 90) + 1;
-        if (!numeri.includes(n)) numeri.push(n);
-    }
-
-    numeri.forEach(n => {
-        const d = document.createElement("div");
-        d.className = "casella";
-        d.textContent = n;
-        d.dataset.numero = n;
-        document.getElementById("schedina").appendChild(d);
-    });
+  baseRef.child("giocatori").on("value", snap => {
+    if (!snap.exists()) baseRef.remove();
+  });
 }
 
-// 🎲 ESTRAZIONE (ANTI-DOPPIO)
+// ESTRAZIONE
 function estraiNumero() {
-    if (!isHost) return;
+  if (!isHost) return;
 
-    baseRef.child("numeriUsciti").transaction(numeri => {
-        if (numeri === null) numeri = [];
+  baseRef.child("numeriUsciti").transaction(numeri => {
+    if (!numeri) numeri = [];
+    if (numeri.length >= 90) return numeri;
 
-        if (numeri.length >= 90) return numeri;
-
-        let disponibili = [];
-        for (let i = 1; i <= 90; i++) {
-            if (!numeri.includes(i)) disponibili.push(i);
-        }
-
-        const estratto = disponibili[Math.floor(Math.random() * disponibili.length)];
-        numeri.push(estratto);
-
-        baseRef.child("numeroCorrente").set(estratto);
-        return numeri;
-    });
+    let disp = [];
+    for (let i = 1; i <= 90; i++) if (!numeri.includes(i)) disp.push(i);
+    numeri.push(disp[Math.floor(Math.random()*disp.length)]);
+    return numeri;
+  });
 }
 
-// 👀 ASCOLTA NUMERI (SINGOLA FONTE)
-baseRef.child("numeriUsciti").on("value", snap => {
+// ASCOLTO NUMERI
+function ascoltaNumeri() {
+  baseRef.child("numeriUsciti").on("value", snap => {
     const numeri = snap.val() || [];
-
-    document.getElementById("listaNumeri").innerHTML = "";
-    numeri.forEach(n => {
-        const s = document.createElement("span");
-        s.textContent = n;
-        document.getElementById("listaNumeri").appendChild(s);
-    });
-
-    const ultimo = numeri[numeri.length - 1];
-    if (ultimo) {
-        document.getElementById("numero").textContent = ultimo;
-
-        document.querySelectorAll(".casella").forEach(c => {
-            if (parseInt(c.dataset.numero) === ultimo && !c.classList.contains("segnato")) {
-                c.classList.add("segnato");
-                numeriSegnati.push(ultimo);
-                controllaVittoria();
-            }
-        });
-    }
-});
-
-// 🏆 VITTORIE GLOBALI
-function controllaVittoria() {
-    const c = numeriSegnati.length;
-
-    if (c >= 2 && !vittorie.ambo) {
-        vittorie.ambo = true;
-        baseRef.child("vittoria").set({ tipo:"AMBO", nome });
-    }
-    if (c >= 3 && !vittorie.terno) {
-        vittorie.terno = true;
-        baseRef.child("vittoria").set({ tipo:"TERNO", nome });
-    }
-    if (c >= 15 && !vittorie.tombola) {
-        vittorie.tombola = true;
-        baseRef.child("vittoria").set({ tipo:"TOMBOLA", nome });
-    }
+    const lista = document.getElementById("listaNumeri");
+    lista.innerHTML = "";
+    numeri.forEach(n => lista.innerHTML += `<span>${n}</span>`);
+    document.getElementById("numero").textContent = numeri.at(-1) || "-";
+  });
 }
 
-baseRef.child("vittoria").on("value", snap => {
-    const v = snap.val();
-    if (v) alert(`🏆 ${v.tipo}! Vince ${v.nome}`);
-});
+// SCHEDINA
+function creaSchedina() {
+  const s = document.getElementById("schedina");
+  s.innerHTML = "";
+  let nums = [];
+  while (nums.length < 15) {
+    let n = Math.floor(Math.random()*90)+1;
+    if (!nums.includes(n)) nums.push(n);
+  }
+  nums.forEach(n => s.innerHTML += `<div class="casella">${n}</div>`);
+}
 
-// 🔄 RESET STANZA
+// VITTORIA
+function ascoltaVittoria() {
+  baseRef.child("vittoria").on("value", s => {
+    if (s.val()) alert(`🏆 ${s.val().tipo} vince ${s.val().nome}`);
+  });
+}
+
+// RESET
 function resetPartita() {
-    if (!isHost) return alert("Solo l'host!");
-
-    baseRef.set({
-        host: playerId,
-        numeriUsciti: [],
-        numeroCorrente: null
-    });
-
-    document.getElementById("schedina").innerHTML = "";
+  if (!isHost) return;
+  baseRef.child("numeriUsciti").set([]);
+  baseRef.child("vittoria").remove();
 }
-
-
-
-
-
-
