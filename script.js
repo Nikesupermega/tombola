@@ -72,24 +72,36 @@ function estraiNumero() {
 
 // ASCOLTO NUMERI
 function ascoltaNumeri() {
-  document.getElementById("numero").textContent = numeri.at(-1) || "-";
-  document.querySelectorAll(".casella").forEach(c => {
-  const n = parseInt(c.dataset.numero);
-  if (n === numeri.at(-1) && !c.classList.contains("segnato")) {
-    c.classList.add("segnato");
-    numeriSegnati.push(n);
-    controllaVittoria();
-  }
-});
-
   baseRef.child("numeriUsciti").on("value", snap => {
     const numeri = snap.val() || [];
+
+    // storico
     const lista = document.getElementById("listaNumeri");
     lista.innerHTML = "";
-    numeri.forEach(n => lista.innerHTML += `<span>${n}</span>`);
-    document.getElementById("numero").textContent = numeri.at(-1) || "-";
+    numeri.forEach(n => {
+      const s = document.createElement("span");
+      s.textContent = n;
+      lista.appendChild(s);
+    });
+
+    // ultimo numero
+    const ultimo = numeri[numeri.length - 1];
+    document.getElementById("numero").textContent = ultimo || "-";
+
+    // segna sulla schedina
+    if (!ultimo) return;
+
+    document.querySelectorAll(".casella").forEach(c => {
+      const n = parseInt(c.dataset.numero);
+      if (n === ultimo && !c.classList.contains("segnato")) {
+        c.classList.add("segnato");
+        numeriSegnati.push(n);
+        controllaVittoria();
+      }
+    });
   });
 }
+
 
 // SCHEDINA
 let numeriSchedina = [];
@@ -141,4 +153,5 @@ function resetPartita() {
   baseRef.child("numeriUsciti").set([]);
   baseRef.child("vittoria").remove();
 }
+
 
